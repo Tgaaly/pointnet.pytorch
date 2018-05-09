@@ -1,4 +1,3 @@
-from __future__ import print_function
 import argparse
 import os
 import random
@@ -13,17 +12,17 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
-from datasets import PartDataset
+from data.datasets import PartDataset
 from pointnet import PointNetDenseCls
 import torch.nn.functional as F
 
-
+import pdb
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=4)
 parser.add_argument('--nepoch', type=int, default=25, help='number of epochs to train for')
-parser.add_argument('--outf', type=str, default='seg',  help='output folder')
+parser.add_argument('--outf', type=str, default='results/seg',  help='output folder')
 parser.add_argument('--model', type=str, default = '',  help='model path')
 
 
@@ -54,7 +53,7 @@ except OSError:
 blue = lambda x:'\033[94m' + x + '\033[0m'
 
 
-classifier = PointNetDenseCls(k = num_classes)
+classifier = PointNetDenseCls(k = num_classes, num_points=2500)
 
 if opt.model != '':
     classifier.load_state_dict(torch.load(opt.model))
@@ -64,17 +63,18 @@ classifier.cuda()
 
 num_batch = len(dataset)/opt.batchSize
 
+
 for epoch in range(opt.nepoch):
     for i, data in enumerate(dataloader, 0):
         points, target = data
         points, target = Variable(points), Variable(target)
         points = points.transpose(2,1) 
+
         points, target = points.cuda(), target.cuda()   
         optimizer.zero_grad()
         pred, _ = classifier(points)
         pred = pred.view(-1, num_classes)
         target = target.view(-1,1)[:,0] - 1
-        #print(pred.size(), target.size())
         loss = F.nll_loss(pred, target)
         loss.backward()
         optimizer.step()
@@ -83,7 +83,7 @@ for epoch in range(opt.nepoch):
         print('[%d: %d/%d] train loss: %f accuracy: %f' %(epoch, i, num_batch, loss.data[0], correct/float(opt.batchSize * 2500)))
         
         if i % 10 == 0:
-            j, data = next(enumerate(testdataloader, 0))
+            j, data = enumerate(testdataloader, 0).next()
             points, target = data
             points, target = Variable(points), Variable(target)
             points = points.transpose(2,1) 

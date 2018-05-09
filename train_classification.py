@@ -1,4 +1,3 @@
-from __future__ import print_function
 import argparse
 import os
 import random
@@ -13,11 +12,11 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
-from datasets import PartDataset
+from data.datasets import PartDataset
 from pointnet import PointNetCls
 import torch.nn.functional as F
 
-
+import pdb
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
@@ -83,7 +82,7 @@ for epoch in range(opt.nepoch):
         print('[%d: %d/%d] train loss: %f accuracy: %f' %(epoch, i, num_batch, loss.data[0], correct/float(opt.batchSize)))
 
         if i % 10 == 0:
-            j, data = next(enumerate(testdataloader, 0))
+            j, data = enumerate(testdataloader, 0).next()
             points, target = data
             points, target = Variable(points), Variable(target[:,0])
             points = points.transpose(2,1)
